@@ -19,6 +19,7 @@
 #include "coctx.h"
 #include <string.h>
 
+
 #define ESP 0
 #define EIP 1
 #define EAX 2
@@ -39,6 +40,7 @@
 #define RCX 11
 #define R8 12
 #define R9 13
+
 
 //----- --------
 // 32 bit
@@ -63,13 +65,13 @@ enum
 //    | regs[2]: r13 |
 //    | regs[3]: r12 |
 //    | regs[4]: r9  |
-//    | regs[5]: r8  |
+//    | regs[5]: r8  | 
 //    | regs[6]: rbp |
 //    | regs[7]: rdi |
 //    | regs[8]: rsi |
 //    | regs[9]: ret |  //ret func addr
 //    | regs[10]: rdx |
-//    | regs[11]: rcx |
+//    | regs[11]: rcx | 
 //    | regs[12]: rbx |
 //hig | regs[13]: rsp |
 enum
@@ -83,57 +85,54 @@ enum
 //64 bit
 extern "C"
 {
-	extern void coctx_swap(coctx_t *, coctx_t *) asm("coctx_swap");
+	extern void coctx_swap( coctx_t *,coctx_t* ) asm("coctx_swap");
 };
 #if defined(__i386__)
-int coctx_init(coctx_t *ctx)
+int coctx_init( coctx_t *ctx )
 {
-	memset(ctx, 0, sizeof(*ctx));
+	memset( ctx,0,sizeof(*ctx));
 	return 0;
 }
-int coctx_make(coctx_t *ctx, coctx_pfn_t pfn, const void *s, const void *s1)
+int coctx_make( coctx_t *ctx,coctx_pfn_t pfn,const void *s,const void *s1 )
 {
 	//make room for coctx_param
 	char *sp = ctx->ss_sp + ctx->ss_size - sizeof(coctx_param_t);
-	sp = (char *)((unsigned long)sp & -16L);
+	sp = (char*)((unsigned long)sp & -16L);
 
-	coctx_param_t *param = (coctx_param_t *)sp;
+	
+	coctx_param_t* param = (coctx_param_t*)sp ;
 	param->s1 = s;
 	param->s2 = s1;
 
 	memset(ctx->regs, 0, sizeof(ctx->regs));
 
-	ctx->regs[kESP] = (char *)(sp) - sizeof(void *);
-	ctx->regs[kEIP] = (char *)pfn;
+	ctx->regs[ kESP ] = (char*)(sp) - sizeof(void*);
+	ctx->regs[ kEIP ] = (char*)pfn;
 
 	return 0;
 }
 #elif defined(__x86_64__)
-int coctx_make(coctx_t *ctx, coctx_pfn_t pfn, const void *s, const void *s1)
-/*
-1.协程控制块地址　coctx_t  
-2. typedef void *(*coctx_pfn_t)(void *s, void *s2); 协程函数　
-3. 参数3和参数4是向上述pfn传递的两个参数
-*/
+int coctx_make( coctx_t *ctx,coctx_pfn_t pfn,const void *s,const void *s1 )
 {
-	char *sp = ctx->ss_sp + ctx->ss_size;	 //计算栈顶地址，这里多加了一个寄存器单位也就是8字节
-	sp = (char *)((unsigned long)sp & -16LL); //这里对第4位清零，使栈64位内存对齐。向下取整跟满递减搭配。
+	char *sp = ctx->ss_sp + ctx->ss_size;
+	sp = (char*) ((unsigned long)sp & -16LL  );
 
 	memset(ctx->regs, 0, sizeof(ctx->regs));
 
-	ctx->regs[kRSP] = sp - 8; //这里把多加的8扣回来，表示栈顶指针
+	ctx->regs[ kRSP ] = sp - 8;
 
-	ctx->regs[kRETAddr] = (char *)pfn; //将返回地址初始化为用户创建协程时传入的开始函数地址，也就是从函数头开始执行。
+	ctx->regs[ kRETAddr] = (char*)pfn;
 
-	ctx->regs[kRDI] = (char *)s; //函数原型设置为两个参数，s和s1即向函数传递的两个参数。
-	ctx->regs[kRSI] = (char *)s1;
+	ctx->regs[ kRDI ] = (char*)s;
+	ctx->regs[ kRSI ] = (char*)s1;
 	return 0;
 }
 
-int coctx_init(coctx_t *ctx)
+int coctx_init( coctx_t *ctx )
 {
-	memset(ctx, 0, sizeof(*ctx));
+	memset( ctx,0,sizeof(*ctx));
 	return 0;
 }
 
 #endif
+
