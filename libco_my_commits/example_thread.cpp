@@ -16,8 +16,6 @@
 * limitations under the License.
 */
 
-
-
 #include "co_routine.h"
 #include "co_routine_inner.h"
 
@@ -29,28 +27,30 @@
 
 int loop(void *)
 {
+	printf("进入loop 函数　\n");
 	return 0;
 }
-static void *routine_func( void * )
+static void *routine_func(void *)
 {
-	stCoEpoll_t * ev = co_get_epoll_ct(); //ct = current thread
-	co_eventloop( ev,loop,0 );
-	return 0;
-}
-int main(int argc,char *argv[])
-{
-	int cnt = atoi( argv[1] );
+	printf("线程运行\n");
 
-	pthread_t tid[ cnt ];
-	for(int i=0;i<cnt;i++)
+	stCoEpoll_t *ev = co_get_epoll_ct(); //ct = current thread
+	co_eventloop(ev, loop, 0);
+	return 0;
+}
+int main(int argc, char *argv[])
+{
+	int cnt = atoi(argv[1]);
+
+	pthread_t tid[cnt];
+	for (int i = 0; i < cnt; i++)
 	{
-		pthread_create( tid + i,NULL,routine_func,0);
+		pthread_create(tid + i, NULL, routine_func, 0);
 	}
-	for(;;)
+	for (;;)
 	{
 		sleep(1);
 	}
-	
+
 	return 0;
 }
-
