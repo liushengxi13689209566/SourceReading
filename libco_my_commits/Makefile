@@ -54,8 +54,8 @@ libcolib.so: $(COLIB_OBJS)
 # 	$(BUILDEXE) 
 # example_echocli:example_echocli.o
 # 	$(BUILDEXE) 
-# example_thread:example_thread.o
-# 	$(BUILDEXE) 
+example_thread:example_thread.o
+	$(BUILDEXE) 
 # example_poll:example_poll.o
 # 	$(BUILDEXE) 
 # example_exit:example_exit.o
