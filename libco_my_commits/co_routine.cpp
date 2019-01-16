@@ -404,33 +404,33 @@ struct stCoRoutine_t *co_create_env(stCoRoutineEnv_t *env, const stCoRoutineAttr
 									pfn_co_routine_t pfn, void *arg)
 {
 
-	stCoRoutineAttr_t at;
-	if (attr)
-	{
-		memcpy(&at, attr, sizeof(at));
-	}
-	if (at.stack_size <= 0)
-	{
-		at.stack_size = 128 * 1024;
-	}
-	else if (at.stack_size > 1024 * 1024 * 8)
-	{
-		at.stack_size = 1024 * 1024 * 8;
-	}
+	// stCoRoutineAttr_t at;
+	// if (attr)
+	// {
+	// 	memcpy(&at, attr, sizeof(at));
+	// }
+	// if (at.stack_size <= 0)
+	// {
+	// 	at.stack_size = 128 * 1024;
+	// }
+	// else if (at.stack_size > 1024 * 1024 * 8)
+	// {
+	// 	at.stack_size = 1024 * 1024 * 8;
+	// }
 
-	if (at.stack_size & 0xFFF)
-	{
-		at.stack_size &= ~0xFFF;
-		at.stack_size += 0x1000;
-	}
+	// if (at.stack_size & 0xFFF)
+	// {
+	// 	at.stack_size &= ~0xFFF;
+	// 	at.stack_size += 0x1000;
+	// }
 
-	stCoRoutine_t *lp = (stCoRoutine_t *)malloc(sizeof(stCoRoutine_t));
+	// stCoRoutine_t *lp = (stCoRoutine_t *)malloc(sizeof(stCoRoutine_t));
 
-	memset(lp, 0, (long)(sizeof(stCoRoutine_t)));
+	// memset(lp, 0, (long)(sizeof(stCoRoutine_t)));
 
-	lp->env = env;
-	lp->pfn = pfn;
-	lp->arg = arg;
+	// lp->env = env;
+	// lp->pfn = pfn;
+	// lp->arg = arg;
 
 	stStackMem_t *stack_mem = NULL;
 	if (at.share_stack)
@@ -447,10 +447,10 @@ struct stCoRoutine_t *co_create_env(stCoRoutineEnv_t *env, const stCoRoutineAttr
 	lp->ctx.ss_sp = stack_mem->stack_buffer;
 	lp->ctx.ss_size = at.stack_size;
 
-	lp->cStart = 0;
-	lp->cEnd = 0;
-	lp->cIsMain = 0;
-	lp->cEnableSysHook = 0;
+	// lp->cStart = 0;
+	// lp->cEnd = 0;
+	// lp->cIsMain = 0;
+	// lp->cEnableSysHook = 0;
 	lp->cIsShareStack = at.share_stack != NULL;
 
 	lp->save_size = 0;
