@@ -16,7 +16,6 @@
 * limitations under the License.
 */
 
-
 #ifndef __CO_ROUTINE_INNER_H__
 
 #include "co_routine.h"
@@ -29,11 +28,10 @@ struct stCoSpec_t
 
 struct stStackMem_t
 {
-	stCoRoutine_t* occupy_co;
+	stCoRoutine_t *occupy_co;
 	int stack_size;
-	char* stack_bp; //stack_buffer + stack_size
-	char* stack_buffer;
-
+	char *stack_bp; //stack_buffer + stack_size
+	char *stack_buffer;
 };
 
 struct stShareStack_t
@@ -41,68 +39,60 @@ struct stShareStack_t
 	unsigned int alloc_idx;
 	int stack_size;
 	int count;
-	stStackMem_t** stack_array;
+	stStackMem_t **stack_array;
 };
-
-
 
 struct stCoRoutine_t
 {
-	stCoRoutineEnv_t *env;
-	pfn_co_routine_t pfn;
-	void *arg;
-	coctx_t ctx;
+	stCoRoutineEnv_t *env; //运行环境，我感觉其实就是在哪个线程
+	pfn_co_routine_t pfn;  //协程函数
+	void *arg;			   //协程函数的参数
+	coctx_t ctx;		   //保存上下文
 
-	char cStart;
-	char cEnd;
-	char cIsMain;
+	char cStart;  //协程是否运行
+	char cEnd;	//协程是否结束
+	char cIsMain; //是否是主协程
 	char cEnableSysHook;
 	char cIsShareStack;
 
 	void *pvEnv;
 
 	//char sRunStack[ 1024 * 128 ];
-	stStackMem_t* stack_mem;
-
+	stStackMem_t *stack_mem;
 
 	//save satck buffer while confilct on same stack_buffer;
-	char* stack_sp; 
+	char *stack_sp;
 	unsigned int save_size;
-	char* save_buffer;
+	char *save_buffer;
 
 	stCoSpec_t aSpec[1024];
-
 };
 
-
-
 //1.env
-void 				co_init_curr_thread_env();
-stCoRoutineEnv_t *	co_get_curr_thread_env();
+void co_init_curr_thread_env();
+stCoRoutineEnv_t *co_get_curr_thread_env();
 
 //2.coroutine
-void    co_free( stCoRoutine_t * co );
-void    co_yield_env(  stCoRoutineEnv_t *env );
+void co_free(stCoRoutine_t *co);
+void co_yield_env(stCoRoutineEnv_t *env);
 
 //3.func
-
-
 
 //-----------------------------------------------------------------------------------------------
 
 struct stTimeout_t;
-struct stTimeoutItem_t ;
+struct stTimeoutItem_t;
 
-stTimeout_t *AllocTimeout( int iSize );
-void 	FreeTimeout( stTimeout_t *apTimeout );
-int  	AddTimeout( stTimeout_t *apTimeout,stTimeoutItem_t *apItem ,uint64_t allNow );
+stTimeout_t *AllocTimeout(int iSize);
+void FreeTimeout(stTimeout_t *apTimeout);
+int AddTimeout(stTimeout_t *apTimeout, stTimeoutItem_t *apItem, uint64_t allNow);
 
 struct stCoEpoll_t;
-stCoEpoll_t * AllocEpoll();
-void 		FreeEpoll( stCoEpoll_t *ctx );
+stCoEpoll_t *AllocEpoll();
+void FreeEpoll(stCoEpoll_t *ctx);
 
-stCoRoutine_t *		GetCurrThreadCo();
-void 				SetEpoll( stCoRoutineEnv_t *env,stCoEpoll_t *ev );
+stCoRoutine_t *GetCurrThreadCo();
+void SetEpoll(stCoRoutineEnv_t *env, stCoEpoll_t *ev);
 
 typedef void (*pfnCoRoutineFunc_t)();
 
