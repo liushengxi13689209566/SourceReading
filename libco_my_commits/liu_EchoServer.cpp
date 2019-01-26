@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/wait.h>
+#include <iostream>
 
 using namespace std;
 struct task_t
@@ -54,7 +55,7 @@ static int CreateSocket(const char *ip, int port)
 }
 static void *fun_acc(void *arg)
 {
-	co_enable_hook_sys();
+	// co_enable_hook_sys();
 
 	printf("accept  协程\n");
 
@@ -66,7 +67,7 @@ static void *fun_acc(void *arg)
 			printf("stack is empty \n");
 			struct pollfd pf = {0};
 			pf.fd = -1;
-			poll(&pf, 1, 1000);
+			// poll(&pf, 1, 1000);
 			continue;
 		}
 		struct sockaddr_in addr;
@@ -106,7 +107,7 @@ static void *fun(void *arg)
 
 	printf("fun 函数运行---------\n");
 
-	co_enable_hook_sys();
+	// co_enable_hook_sys();
 
 	task_t *co = (task_t *)arg;
 	char buf[1024 * 16];
@@ -191,6 +192,7 @@ int main(int argc, char *argv[])
 		int co_create( stCoRoutine_t **ppco,const stCoRoutineAttr_t *attr,pfn_co_routine_t pfn,void *arg )
 		*/
 		co_create(&(task->co), NULL, fun, task); /*创建协程*/
+		std::cout << "创建协程" << std::endl;
 
 		co_resume(task->co); /*启用该协程*/
 	}

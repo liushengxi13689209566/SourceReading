@@ -9,9 +9,9 @@ using std::placeholders::_3;
 // using namespace muduo;
 // using namespace muduo::net;
 
-EchoServer::EchoServer(muduo::net::EventLoop* loop,
-                       const muduo::net::InetAddress& listenAddr)
-  : server_(loop, listenAddr, "EchoServer")
+EchoServer::EchoServer(muduo::net::EventLoop *loop,
+                       const muduo::net::InetAddress &listenAddr)
+    : server_(loop, listenAddr, "EchoServer")
 {
   server_.setConnectionCallback(
       std::bind(&EchoServer::onConnection, this, _1));
@@ -24,15 +24,15 @@ void EchoServer::start()
   server_.start();
 }
 
-void EchoServer::onConnection(const muduo::net::TcpConnectionPtr& conn)
+void EchoServer::onConnection(const muduo::net::TcpConnectionPtr &conn)
 {
   LOG_INFO << "EchoServer - " << conn->peerAddress().toIpPort() << " -> "
            << conn->localAddress().toIpPort() << " is "
            << (conn->connected() ? "UP" : "DOWN");
 }
 
-void EchoServer::onMessage(const muduo::net::TcpConnectionPtr& conn,
-                           muduo::net::Buffer* buf,
+void EchoServer::onMessage(const muduo::net::TcpConnectionPtr &conn,
+                           muduo::net::Buffer *buf,
                            muduo::Timestamp time)
 {
   muduo::string msg(buf->retrieveAllAsString());
@@ -40,4 +40,3 @@ void EchoServer::onMessage(const muduo::net::TcpConnectionPtr& conn,
            << "data received at " << time.toString();
   conn->send(msg);
 }
-

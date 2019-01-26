@@ -2,7 +2,7 @@
 
 #include <assert.h>
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
   Options options;
   if (parseCommandLine(argc, argv, &options))
@@ -21,4 +21,3 @@ int main(int argc, char* argv[])
     }
   }
 }
-

@@ -255,18 +255,19 @@ static stStackMem_t *co_get_stackmem(stShareStack_t *share_stack)
 }
 
 // ----------------------------------------------------------------------------
+
 struct stTimeoutItemLink_t;
 struct stTimeoutItem_t;
-struct stCoEpoll_t
+
+struct stCoEpoll_t //EPOLL 相关数据
 {
 	int iEpollFd;
 	static const int _EPOLL_SIZE = 1024 * 10;
 
-	struct stTimeout_t *pTimeout;
+	struct stTimeout_t *pTimeout; //时间轮
 
-	struct stTimeoutItemLink_t *pstTimeoutList;
-
-	struct stTimeoutItemLink_t *pstActiveList;
+	struct stTimeoutItemLink_t *pstTimeoutList; //已经超时的事件
+	struct stTimeoutItemLink_t *pstActiveList;  //活跃的事件　
 
 	co_epoll_res *result;
 };
@@ -296,7 +297,7 @@ struct stTimeoutItemLink_t
 	stTimeoutItem_t *head;
 	stTimeoutItem_t *tail;
 };
-struct stTimeout_t
+struct stTimeout_t //时间轮　
 {
 	stTimeoutItemLink_t *pItems;
 	int iItemSize;
@@ -404,33 +405,33 @@ struct stCoRoutine_t *co_create_env(stCoRoutineEnv_t *env, const stCoRoutineAttr
 									pfn_co_routine_t pfn, void *arg)
 {
 
-	// stCoRoutineAttr_t at;
-	// if (attr)
-	// {
-	// 	memcpy(&at, attr, sizeof(at));
-	// }
-	// if (at.stack_size <= 0)
-	// {
-	// 	at.stack_size = 128 * 1024;
-	// }
-	// else if (at.stack_size > 1024 * 1024 * 8)
-	// {
-	// 	at.stack_size = 1024 * 1024 * 8;
-	// }
+	stCoRoutineAttr_t at;
+	if (attr)
+	{
+		memcpy(&at, attr, sizeof(at));
+	}
+	if (at.stack_size <= 0)
+	{
+		at.stack_size = 128 * 1024;
+	}
+	else if (at.stack_size > 1024 * 1024 * 8)
+	{
+		at.stack_size = 1024 * 1024 * 8;
+	}
 
-	// if (at.stack_size & 0xFFF)
-	// {
-	// 	at.stack_size &= ~0xFFF;
-	// 	at.stack_size += 0x1000;
-	// }
+	if (at.stack_size & 0xFFF)
+	{
+		at.stack_size &= ~0xFFF;
+		at.stack_size += 0x1000;
+	}
 
-	// stCoRoutine_t *lp = (stCoRoutine_t *)malloc(sizeof(stCoRoutine_t));
+	stCoRoutine_t *lp = (stCoRoutine_t *)malloc(sizeof(stCoRoutine_t));
 
-	// memset(lp, 0, (long)(sizeof(stCoRoutine_t)));
+	memset(lp, 0, (long)(sizeof(stCoRoutine_t)));
 
-	// lp->env = env;
-	// lp->pfn = pfn;
-	// lp->arg = arg;
+	lp->env = env;
+	lp->pfn = pfn;
+	lp->arg = arg;
 
 	stStackMem_t *stack_mem = NULL;
 	if (at.share_stack)
@@ -447,10 +448,10 @@ struct stCoRoutine_t *co_create_env(stCoRoutineEnv_t *env, const stCoRoutineAttr
 	lp->ctx.ss_sp = stack_mem->stack_buffer;
 	lp->ctx.ss_size = at.stack_size;
 
-	// lp->cStart = 0;
-	// lp->cEnd = 0;
-	// lp->cIsMain = 0;
-	// lp->cEnableSysHook = 0;
+	lp->cStart = 0;
+	lp->cEnd = 0;
+	lp->cIsMain = 0;
+	lp->cEnableSysHook = 0;
 	lp->cIsShareStack = at.share_stack != NULL;
 
 	lp->save_size = 0;
@@ -700,7 +701,7 @@ void OnPollPreparePfn(stTimeoutItem_t *ap, struct epoll_event &e, stTimeoutItemL
 
 void co_eventloop(stCoEpoll_t *ctx, pfn_co_eventloop_t pfn, void *arg)
 {
-	if (!ctx->result)
+	if (!ctx->result) //若没有分配空间，就分配
 	{
 		ctx->result = co_epoll_res_alloc(stCoEpoll_t::_EPOLL_SIZE);
 	}
@@ -709,55 +710,71 @@ void co_eventloop(stCoEpoll_t *ctx, pfn_co_eventloop_t pfn, void *arg)
 	for (;;)
 	{
 		int ret = co_epoll_wait(ctx->iEpollFd, result, stCoEpoll_t::_EPOLL_SIZE, 1);
-
+		//从epoll结构中选取active事件摘下存放在result链表里
 		stTimeoutItemLink_t *active = (ctx->pstActiveList);
-		stTimeoutItemLink_t *timeout = (ctx->pstTimeoutList);
+		//active事件链表，该链表同时包含epoll函数active事件和实践论上timeout的事件。
+		stTimeoutItemLink_t *timeout = (ctx->pstTimeoutList); //timeout事件链表,链表为空。
 
 		memset(timeout, 0, sizeof(stTimeoutItemLink_t));
+		//之前的timeout事件已经全都处理完毕了（链表为空），把结构清空（head和tail清空）。
 
 		for (int i = 0; i < ret; i++)
 		{
 			stTimeoutItem_t *item = (stTimeoutItem_t *)result->events[i].data.ptr;
+			//从链表result中取出一个active事件。
 			if (item->pfnPrepare)
+			//若有预处理函数就调用预处理函数，就不进一步操作了。可见pfnPrepare和pfnProcess是互斥关系。
 			{
 				item->pfnPrepare(item, result->events[i], active);
 			}
 			else
 			{
-				AddTail(active, item);
+				AddTail(active, item); //没有的话就把它加入到active链表中。
 			}
 		}
 
 		unsigned long long now = GetTickMS();
+		//获取当前绝对时间，与时间轮起始时间的时间差作为一个滴答时间
 		TakeAllTimeout(ctx->pTimeout, now, timeout);
+		//让时间轮转动一下，并取出所有因此timeout的事件（定时器）。
 
 		stTimeoutItem_t *lp = timeout->head;
 		while (lp)
 		{
 			//printf("raise timeout %p\n",lp);
-			lp->bTimeout = true;
+			lp->bTimeout = true; //标记为超时
 			lp = lp->pNext;
 		}
 
 		Join<stTimeoutItem_t, stTimeoutItemLink_t>(active, timeout);
-
+		//把超时事件链表也添加到active链表里。
 		lp = active->head;
 		while (lp)
 		{
 
 			PopHead<stTimeoutItem_t, stTimeoutItemLink_t>(active);
+			//将一个active事件取下来
 			if (lp->bTimeout && now < lp->ullExpireTime)
 			{
+				//如果是超时事件，而且时间没超时。
+				/*触发条件：如果向时间轮加入的计时器超时时间过大且超过了最大计时时间，然后虽然会报error但是还会
+    加入到时间轮中。后来将它取出时，它没有真正的超时，也就是绝对超时时间大于当前时间，就会触发这个条件。
+这样的话，我们将它重新加入到时间轮中继续等待，如此循环，直到真正满足它的时间点后就不会触发这个条，
+这样就很完美地解决了时间过长无法存入的问题。
+这里不得不感叹一下腾讯工程师设计的精妙。
+*/
 				int ret = AddTimeout(ctx->pTimeout, lp, now);
-				if (!ret)
+				if (!ret) //ret==0表示AddTimeout成功（时间超过最大超时时间也会返回0）。
 				{
-					lp->bTimeout = false;
+					lp->bTimeout = false; //重置计时器为未超时。
 					lp = active->head;
 					continue;
 				}
+				//因为代码里写的时间已经是满足ret==0的条件了，若这样还是不成功，那就是天意了。
 			}
-			if (lp->pfnProcess)
-			{
+			if (lp->pfnProcess) //若存在就执行一下这个函数。
+			{					//此函数会使eventloop放弃执行权，转到co_poll_inner继续执行。
+				//poll_inner上交执行权之后会从这继续执行，完成收尾工作，lp会被从链表中摘下销毁。
 				lp->pfnProcess(lp);
 			}
 

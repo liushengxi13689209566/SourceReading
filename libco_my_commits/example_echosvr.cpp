@@ -114,7 +114,7 @@ static void *accept_routine(void *)
 			printf("empty\n"); //sleep
 			struct pollfd pf = {0};
 			pf.fd = -1;
-			poll(&pf, 1, 1000);
+			poll(&pf, 1, 1000); //sleep(1000)
 
 			continue;
 		}

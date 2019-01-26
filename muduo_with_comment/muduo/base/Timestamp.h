@@ -24,12 +24,12 @@ class Timestamp : public muduo::copyable,
                   public boost::equality_comparable<Timestamp>,
                   public boost::less_than_comparable<Timestamp>
 {
- public:
+public:
   ///
   /// Constucts an invalid Timestamp.
   ///
   Timestamp()
-    : microSecondsSinceEpoch_(0)
+      : microSecondsSinceEpoch_(0)
   {
   }
 
@@ -38,11 +38,11 @@ class Timestamp : public muduo::copyable,
   ///
   /// @param microSecondsSinceEpoch
   explicit Timestamp(int64_t microSecondsSinceEpochArg)
-    : microSecondsSinceEpoch_(microSecondsSinceEpochArg)
+      : microSecondsSinceEpoch_(microSecondsSinceEpochArg)
   {
   }
 
-  void swap(Timestamp& that)
+  void swap(Timestamp &that)
   {
     std::swap(microSecondsSinceEpoch_, that.microSecondsSinceEpoch_);
   }
@@ -57,7 +57,9 @@ class Timestamp : public muduo::copyable,
   // for internal usage.
   int64_t microSecondsSinceEpoch() const { return microSecondsSinceEpoch_; }
   time_t secondsSinceEpoch() const
-  { return static_cast<time_t>(microSecondsSinceEpoch_ / kMicroSecondsPerSecond); }
+  {
+    return static_cast<time_t>(microSecondsSinceEpoch_ / kMicroSecondsPerSecond);
+  }
 
   ///
   /// Get time of now.
@@ -80,7 +82,7 @@ class Timestamp : public muduo::copyable,
 
   static const int kMicroSecondsPerSecond = 1000 * 1000;
 
- private:
+private:
   int64_t microSecondsSinceEpoch_;
 };
 
@@ -118,6 +120,6 @@ inline Timestamp addTime(Timestamp timestamp, double seconds)
   return Timestamp(timestamp.microSecondsSinceEpoch() + delta);
 }
 
-}  // namespace muduo
+} // namespace muduo
 
-#endif  // MUDUO_BASE_TIMESTAMP_H
+#endif // MUDUO_BASE_TIMESTAMP_H
